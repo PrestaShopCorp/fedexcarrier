@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2014 PrestaShop
+* 2007-2016 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2014 PrestaShop SA
+*  @copyright  2007-2016 PrestaShop SA
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -469,12 +469,27 @@ class FedexCarrier extends CarrierModule
 
 				$("#configForm").submit(function() {
 					$("#fedex_carrier_state").val($(".stateInput.selected").val());
+					$("#fedex_carrier_recipient_state").val($(".recipient_stateInput.selected").val());
+				});
+
+				var recipient_country = $("#fedex_carrier_recipient_country");
+				recipient_country.change(function() {
+					if ($("#fedex_carrier_recipient_state_" + recipient_country.val()))
+					{
+						$(".recipient_stateInput.selected").removeClass("selected");
+						if ($("#fedex_carrier_recipient_state_" + recipient_country.val()).size())
+							$("#fedex_carrier_recipient_state_" + recipient_country.val()).addClass("selected");
+						else
+							$("#fedex_carrier_recipient_state_none").addClass("selected");
+					}
 				});
 			});
 			</script>
 			<style>
 				.stateInput { display: none; }
+				.recipient_stateInput { display: none; }
 				.stateInput.selected { display: block; }
+				.recipient_stateInput.selected { display: block; }
 				.margin-form { padding: 0 0 1em 260px; }
 				label { width: 250px; }
 			</style>
@@ -550,7 +565,7 @@ class FedexCarrier extends CarrierModule
 						$id_country_current = 0;
 						$statesList = Db::getInstance()->executeS('
 						SELECT `id_state`, `id_country`, `name`
-						FROM `'._DB_PREFIX_.'state` WHERE `active` = 1
+						FROM `'._DB_PREFIX_.'state` WHERE `active` = 1 AND `id_country`!=0
 						ORDER BY `id_country`, `name` ASC');
 						foreach ($statesList as $v)
 						{
@@ -566,6 +581,53 @@ class FedexCarrier extends CarrierModule
 						}
 						$html .= '</select><div id="fedex_carrier_state_none" class="stateInput selected">'.$this->l('There is no state configuration for this country').'</div>
 						<input type="hidden" id="fedex_carrier_state" name="fedex_carrier_state" value="s" />
+					</div>
+				</fieldset>
+
+				<fieldset style="border: 0px;">
+					<h4>'.$this->l('Recipient Test Address configuration').' :</h4><p>Leave blank to use above address configuration</p>
+					<label>'.$this->l('Address line 1').' : </label>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_recipient_address1" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_recipient_address1', Configuration::get('FEDEX_CARRIER_RECIPIENT_ADDRESS1'))).'" /></div>
+					<label>'.$this->l('Address line 2').' : </label>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_recipient_address2" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_recipient_address2', Configuration::get('FEDEX_CARRIER_RECIPIENT_ADDRESS2'))).'" /></div>
+					<label>'.$this->l('Zip / Postal Code').' : </label>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_recipient_postal_code" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_recipient_postal_code', Configuration::get('FEDEX_CARRIER_RECIPIENT_POSTAL_CODE'))).'" /></div><br />
+					<label>'.$this->l('City').' : </label>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_recipient_city" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_recipient_city', Configuration::get('FEDEX_CARRIER_RECIPIENT_CITY'))).'" /></div>
+					<label>'.$this->l('Country').' : </label>
+					<div class="margin-form">
+						<select name="fedex_carrier_recipient_country" id="fedex_carrier_recipient_country">
+							<option value="0">'.$this->l('Select a country ...').'</option>';
+							$idcountries = array();
+							foreach (Country::getCountries($this->context->language->id) as $v)
+							{
+								$html .= '<option value="'.$v['id_country'].'" '.($v['id_country'] == (int)(Tools::getValue('fedex_carrier_recipient_country', Configuration::get('FEDEX_CARRIER_RECIPIENT_COUNTRY'))) ? 'selected="selected"' : '').'>'.$v['name'].'</option>';
+								$idcountries[] = $v['id_country'];
+							}
+						$html .= '</select>
+						<p>' . $this->l('Select country from within the list.') . '</p>
+					</div>
+					<label>'.$this->l('State').' : </label>
+					<div class="margin-form">';
+						$id_recipient_country_current = 0;
+						$statesList = Db::getInstance()->executeS('
+						SELECT `id_state`, `id_country`, `name`
+						FROM `'._DB_PREFIX_.'state` WHERE `active` = 1 AND `id_country`!=0
+						ORDER BY `id_country`, `name` ASC');
+						foreach ($statesList as $v)
+						{
+							if ($id_recipient_country_current != $v['id_country'])
+							{
+								if ($id_recipient_country_current != 0)
+									$html .= '</select>';
+								$html .= '<select id="fedex_carrier_recipient_state_'.$v['id_country'].'" class="recipient_stateInput">
+									<option value="0">'.$this->l('Select a state ...').'</option>';
+							}
+							$html .= '<option value="'.$v['id_state'].'" '.($v['id_state'] == (int)(Tools::getValue('fedex_carrier_recipient_state', Configuration::get('FEDEX_CARRIER_RECIPIENT_STATE'))) ? 'selected="selected"' : '').'>'.$v['name'].'</option>';		
+							$id_recipient_country_current = $v['id_country'];
+						}
+						$html .= '</select><div id="fedex_carrier_recipient_state_none" class="recipient_stateInput selected">'.$this->l('There is no state configuration for this country').'</div>
+						<input type="hidden" id="fedex_carrier_recipient_state" name="fedex_carrier_recipient_state" value="s" />
 					</div>
 				</fieldset>
 
@@ -618,6 +680,16 @@ class FedexCarrier extends CarrierModule
 						$("#fedex_carrier_state_" + id_country).addClass("selected");
 					else
 						$("#fedex_carrier_state_none").addClass("selected");
+				}
+
+				var id_recipient_country = '.(int)(Tools::getValue('fedex_carrier_recipient_country', Configuration::get('FEDEX_CARRIER_RECIPIENT_COUNTRY'))).';
+				if ($("#fedex_carrier_recipient_state_" + id_recipient_country))
+				{
+					$(".recipient_stateInput.selected").removeClass("selected");
+					if ($("#fedex_carrier_recipient_state_" + id_recipient_country).size())
+						$("#fedex_carrier_recipient_state_" + id_recipient_country).addClass("selected");
+					else
+						$("#fedex_carrier_recipient_state_none").addClass("selected");
 				}
 			</script>';
 		return $html;
@@ -683,6 +755,14 @@ class FedexCarrier extends CarrierModule
 			Configuration::updateValue('FEDEX_CARRIER_CITY', Tools::getValue('fedex_carrier_city'));
 			Configuration::updateValue('FEDEX_CARRIER_STATE', Tools::getValue('fedex_carrier_state'));
 			Configuration::updateValue('FEDEX_CARRIER_COUNTRY', Tools::getValue('fedex_carrier_country'));
+
+			Configuration::updateValue('FEDEX_CARRIER_RECIPIENT_ADDRESS1', Tools::getValue('fedex_carrier_recipient_address1'));
+			Configuration::updateValue('FEDEX_CARRIER_RECIPIENT_ADDRESS2', Tools::getValue('fedex_carrier_recipient_address2'));
+			Configuration::updateValue('FEDEX_CARRIER_RECIPIENT_POSTAL_CODE', Tools::getValue('fedex_carrier_recipient_postal_code'));
+			Configuration::updateValue('FEDEX_CARRIER_RECIPIENT_CITY', Tools::getValue('fedex_carrier_recipient_city'));
+			Configuration::updateValue('FEDEX_CARRIER_RECIPIENT_STATE', Tools::getValue('fedex_carrier_recipient_state'));
+			Configuration::updateValue('FEDEX_CARRIER_RECIPIENT_COUNTRY', Tools::getValue('fedex_carrier_recipient_country'));
+
 			Configuration::updateValue('FEDEX_CARRIER_CALCUL_MODE', Tools::getValue('fedex_carrier_calcul_mode'));
 			Configuration::updateValue('PS_WEIGHT_UNIT', $this->_weightUnitList[strtoupper(Tools::getValue('ps_weight_unit'))]);
 			Configuration::updateValue('PS_DIMENSION_UNIT', $this->_dimensionUnitList[strtoupper(Tools::getValue('ps_dimension_unit'))]);
@@ -1565,7 +1645,6 @@ class FedexCarrier extends CarrierModule
 		}
 		}
 
-
 		// If webservice return a cost, we add it, else, we return the original shipping cost
 		$result = $this->getFedexShippingCost($wsParams);
 		if ($result['connect'] && $result['cost'] > 0)
@@ -1600,7 +1679,7 @@ class FedexCarrier extends CarrierModule
 			'recipient_postalcode' => $address->postcode,
 			'recipient_city' => $address->city,
 			'recipient_country_iso' => $recipient_country['iso_code'],
-			'recipient_state_iso' => $recipient_state['iso_code'],
+			'recipient_state_iso' => substr($recipient_state['iso_code'], 2),
 			'shipper_address1' => Configuration::get('FEDEX_CARRIER_ADDRESS1'),
 			'shipper_address2' => Configuration::get('FEDEX_CARRIER_ADDRESS2'),
 			'shipper_postalcode' => Configuration::get('FEDEX_CARRIER_POSTAL_CODE'),
@@ -1665,6 +1744,17 @@ class FedexCarrier extends CarrierModule
 		$shipper_country = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'country` WHERE `id_country` = '.(int)(Configuration::get('FEDEX_CARRIER_COUNTRY')));
 		$shipper_state = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'state` WHERE `id_state` = '.(int)(Configuration::get('FEDEX_CARRIER_STATE')));
 
+		$recipient_country = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'country` WHERE `id_country` = '.(int)(Configuration::get('FEDEX_CARRIER_RECIPIENT_COUNTRY') ?: Configuration::get('FEDEX_CARRIER_COUNTRY')));
+		$recipient_state = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'state` WHERE `id_state` = '.(int)(Configuration::get('FEDEX_CARRIER_RECIPIENT_COUNTRY') ? Configuration::get('FEDEX_CARRIER_RECIPIENT_STATE') : Configuration::get('FEDEX_CARRIER_STATE')));
+
+		// Enforce 2 character state limit
+		if (strlen($shipper_state['iso_code']) > 2) {
+			$shipper_state['iso_code'] = substr($shipper_state['iso_code'], 0, 2);
+		}
+		if (strlen($recipient_state['iso_code']) > 2) {
+			$recipient_state['iso_code'] = substr($recipient_state['iso_code'], 0, 2);
+		}
+
 		// Generating soap request
 		$request['WebAuthenticationDetail']['UserCredential'] = array('Key' => Configuration::get('FEDEX_CARRIER_API_KEY'), 'Password' => Configuration::get('FEDEX_CARRIER_PASSWORD')); 
 		$request['ClientDetail'] = array('AccountNumber' => Configuration::get('FEDEX_CARRIER_ACCOUNT'), 'MeterNumber' => Configuration::get('FEDEX_CARRIER_METER'));
@@ -1678,20 +1768,21 @@ class FedexCarrier extends CarrierModule
 
 		// Service Type and Packaging Type are not passed in the request
 		$request['RequestedShipment']['Shipper']['Address'] = array('StreetLines' => Configuration::get('FEDEX_CARRIER_ADDRESS1'), 'City' => Configuration::get('FEDEX_CARRIER_CITY'), 'StateOrProvinceCode' => $shipper_state['iso_code'], 'PostalCode' => Configuration::get('FEDEX_CARRIER_POSTAL_CODE'), 'CountryCode' => $shipper_country['iso_code']);
-		$request['RequestedShipment']['Recipient']['Address'] = array('StreetLines' => Configuration::get('FEDEX_CARRIER_ADDRESS1'), 'City' => Configuration::get('FEDEX_CARRIER_CITY'), 'StateOrProvinceCode' => $shipper_state['iso_code'], 'PostalCode' => Configuration::get('FEDEX_CARRIER_POSTAL_CODE'), 'CountryCode' => $shipper_country['iso_code']);
-		$request['RequestedShipment']['ShippingChargesPayment'] = array('PaymentType' => 'SENDER', 'Payor' => array('AccountNumber' => Configuration::get('FEDEX_CARRIER_ACCOUNT'), 'CountryCode' => 'US'));
+		$request['RequestedShipment']['Recipient']['Address'] = array('StreetLines' => Configuration::get('FEDEX_CARRIER_RECIPIENT_ADDRESS1') ?: Configuration::get('FEDEX_CARRIER_ADDRESS1'), 'City' => Configuration::get('FEDEX_CARRIER_RECIPIENT_CITY') ?: Configuration::get('FEDEX_CARRIER_CITY'), 'StateOrProvinceCode' => $recipient_state['iso_code'], 'PostalCode' => Configuration::get('FEDEX_CARRIER_RECIPIENT_POSTAL_CODE') ?: Configuration::get('FEDEX_CARRIER_POSTAL_CODE'), 'CountryCode' => $recipient_country['iso_code']);
+		$request['RequestedShipment']['ShippingChargesPayment'] = array('PaymentType' => 'SENDER', 'Payor' => array('AccountNumber' => Configuration::get('FEDEX_CARRIER_ACCOUNT'), 'CountryCode' => $shipper_country['iso_code']));
 		$request['RequestedShipment']['RateRequestTypes'] = 'ACCOUNT'; 
 		$request['RequestedShipment']['RateRequestTypes'] = 'LIST'; 
 		$request['RequestedShipment']['PackageCount'] = '1';
 		$request['RequestedShipment']['RequestedPackageLineItems'] = array('0' => array('SequenceNumber' => 1, 'GroupPackageCount' => 1, 'Weight' => array('Value' => 2.0, 'Units' => 'LB'), 'Dimensions' => array('Length' => 10, 'Width' => 10, 'Height' => 3, 'Units' => 'IN')));
 
+		// var_dump($request['RequestedShipment']);
+		// exit();
 
 		// Unit or Large Test
 		if (!empty($service))
 			$servicesList = array(array('code' => $service));
 		else
-			$servicesList = Db::getInstance()->executeS('SELECT `code` FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
-
+			$servicesList = Db::getInstance()->executeS('SELECT `code` FROM `'._DB_PREFIX_.'fedex_rate_service_code` WHERE active=1');
 
 		// Testing Service
 		foreach ($servicesList as $service)
@@ -1767,7 +1858,7 @@ class FedexCarrier extends CarrierModule
 		// Service Type and Packaging Type are not passed in the request
 		$request['RequestedShipment']['Shipper']['Address'] = array('StreetLines' => $wsParams['shipper_address1'], 'City' => $wsParams['shipper_city'], 'StateOrProvinceCode' => $wsParams['shipper_state_iso'], 'PostalCode' => $wsParams['shipper_postalcode'], 'CountryCode' => $wsParams['shipper_country_iso']);
 		$request['RequestedShipment']['Recipient']['Address'] = array('StreetLines' => $wsParams['recipient_address1'], 'City' => $wsParams['recipient_city'], 'StateOrProvinceCode' => $wsParams['recipient_state_iso'], 'PostalCode' => $wsParams['recipient_postalcode'], 'CountryCode' => $wsParams['recipient_country_iso']);
-		$request['RequestedShipment']['ShippingChargesPayment'] = array('PaymentType' => 'SENDER', 'Payor' => array('AccountNumber' => Configuration::get('FEDEX_CARRIER_ACCOUNT'), 'CountryCode' => 'US'));
+		$request['RequestedShipment']['ShippingChargesPayment'] = array('PaymentType' => 'SENDER', 'Payor' => array('AccountNumber' => Configuration::get('FEDEX_CARRIER_ACCOUNT'), 'CountryCode' => $wsParams['shipper_country_iso']));
 		$request['RequestedShipment']['RateRequestTypes'] = 'ACCOUNT'; 
 		$request['RequestedShipment']['RateRequestTypes'] = 'LIST'; 
 		$request['RequestedShipment']['PackageCount'] = '2';
@@ -1786,8 +1877,9 @@ class FedexCarrier extends CarrierModule
 
 		// Get Rates
 		try { $resultTab = $client->getRates($request); }
-		catch (Exception $e) { }
-
+		catch (Exception $e) {
+			PrestaShopLogger::addLog($e, 1, null, null, null, true);
+		}
 
 		// Check currency
 		$conversionRate = 1;
