@@ -565,7 +565,7 @@ class FedexCarrier extends CarrierModule
 						$id_country_current = 0;
 						$statesList = Db::getInstance()->executeS('
 						SELECT `id_state`, `id_country`, `name`
-						FROM `'._DB_PREFIX_.'state` WHERE `active` = 1
+						FROM `'._DB_PREFIX_.'state` WHERE `active` = 1 AND `id_country`!=0
 						ORDER BY `id_country`, `name` ASC');
 						foreach ($statesList as $v)
 						{
@@ -612,7 +612,7 @@ class FedexCarrier extends CarrierModule
 						$id_recipient_country_current = 0;
 						$statesList = Db::getInstance()->executeS('
 						SELECT `id_state`, `id_country`, `name`
-						FROM `'._DB_PREFIX_.'state` WHERE `active` = 1
+						FROM `'._DB_PREFIX_.'state` WHERE `active` = 1 AND `id_country`!=0
 						ORDER BY `id_country`, `name` ASC');
 						foreach ($statesList as $v)
 						{
@@ -1644,7 +1644,6 @@ class FedexCarrier extends CarrierModule
 			}
 		}
 		}
-
 
 		// If webservice return a cost, we add it, else, we return the original shipping cost
 		$result = $this->getFedexShippingCost($wsParams);
