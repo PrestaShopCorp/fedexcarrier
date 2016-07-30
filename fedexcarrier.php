@@ -1877,8 +1877,9 @@ class FedexCarrier extends CarrierModule
 
 		// Get Rates
 		try { $resultTab = $client->getRates($request); }
-		catch (Exception $e) { }
-
+		catch (Exception $e) {
+			PrestaShopLogger::addLog($e, 1, null, null, null, true);
+		}
 
 		// Check currency
 		$conversionRate = 1;
