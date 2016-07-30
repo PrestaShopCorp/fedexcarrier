@@ -1679,7 +1679,7 @@ class FedexCarrier extends CarrierModule
 			'recipient_postalcode' => $address->postcode,
 			'recipient_city' => $address->city,
 			'recipient_country_iso' => $recipient_country['iso_code'],
-			'recipient_state_iso' => $recipient_state['iso_code'],
+			'recipient_state_iso' => substr($recipient_state['iso_code'], 2),
 			'shipper_address1' => Configuration::get('FEDEX_CARRIER_ADDRESS1'),
 			'shipper_address2' => Configuration::get('FEDEX_CARRIER_ADDRESS2'),
 			'shipper_postalcode' => Configuration::get('FEDEX_CARRIER_POSTAL_CODE'),
