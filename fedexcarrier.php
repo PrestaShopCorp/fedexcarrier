@@ -493,7 +493,7 @@ class FedexCarrier extends CarrierModule
 					<label>'.$this->l('Your Fedex Authentication Key').' : </label>
 					<div class="margin-form">
 						<input type="text" size="20" name="fedex_carrier_api_key" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_api_key', Configuration::get('FEDEX_CARRIER_API_KEY'))).'" />
-						<p><a href="http://www.fedex.com/webtools/" target="_blank">' . $this->l('Please click here to get your Fedex Authentication Key.') . '</a></p>
+						<p><a href="http://www.fedex.com/us/developer/web-services/index.html" target="_blank">' . $this->l('Please click here to get your Fedex Authentication Key.') . '</a></p>
 					</div>
 					<br /><br />
 					<label>'.$this->l('Packaging Weight').' : </label>
